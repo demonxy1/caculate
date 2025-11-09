@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกรายรับรายจ่าย</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --secondary: #2196F3;
+            --expense: #F44336;
+            --income: #4CAF50;
+            --background: #f5f5f5;
+            --card: #ffffff;
+            --text: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--card);
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background-color: var(--card);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #3d8b40;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: #0b7dda;
+        }
+
+        .btn-danger {
+            background-color: var(--expense);
+        }
+
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .income {
+            background-color: var(--income);
+        }
+
+        .expense {
+            background-color: var(--expense);
+        }
+
+        .balance {
+            background-color: var(--secondary);
+            grid-column: span 2;
+        }
+
+        .transaction-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .income-text {
+            color: var(--income);
+        }
+
+        .expense-text {
+            color: var(--expense);
+        }
+
+        .file-manager {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .file-list {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .file-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .summary {
+                grid-template-columns: 1fr;
+            }
+            
+            .balance {
+                grid-column: span 1;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>บันทึกรายรับรายจ่าย</h1>
+            <p>จัดการการเงินของคุณอย่างง่ายดาย</p>
+        </header>
+
+        <div class="card">
+            <h2>สรุปยอด</h2>
+            <div class="summary">
+                <div class="summary-item income">
+                    <h3>รายรับ</h3>
+                    <p id="total-income">0.00 บาท</p>
+                </div>
+                <div class="summary-item expense">
+                    <h3>รายจ่าย</h3>
+                    <p id="total-expense">0.00 บาท</p>
+                </div>
+                <div class="summary-item balance">
+                    <h3>ยอดคงเหลือ</h3>
+                    <p id="balance">0.00 บาท</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>บันทึกรายการ</h2>
+            <form id="transaction-form">
+                <div class="form-group">
+                    <label for="type">ประเภท</label>
+                    <select id="type" required>
+                        <option value="income">รายรับ</option>
+                        <option value="expense">รายจ่าย</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="amount">จำนวนเงิน</label>
+                    <input type="number" id="amount" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">รายละเอียด</label>
+                    <input type="text" id="description" required>
+                </div>
+                <div class="form-group">
+                    <label for="category">หมวดหมู่</label>
+                    <select id="category" required>
+                        <option value="food">อาหาร</option>
+                        <option value="transport">การเดินทาง</option>
+                        <option value="shopping">ช้อปปิ้ง</option>
+                        <option value="bills">ค่าบิล</option>
+                        <option value="salary">เงินเดือน</option>
+                        <option value="other">อื่นๆ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="date">วันที่</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="button-group">
+                    <button type="submit">เพิ่มรายการ</button>
+                    <button type="button" id="clear-form">ล้างฟอร์ม</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>รายการล่าสุด</h2>
+            <div class="transaction-list" id="transaction-list">
+                <!-- รายการจะถูกเพิ่มที่นี่โดย JavaScript -->
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>จัดการไฟล์</h2>
+            <div class="file-manager">
+                <div class="button-group">
+                    <button id="new-file">สร้างไฟล์ใหม่</button>
+                    <button id="save-file" class="btn-secondary">บันทึกไฟล์</button>
+                    <button id="load-file" class="btn-secondary">เปิดไฟล์</button>
+                </div>
+                <div class="file-list" id="file-list">
+                    <!-- รายการไฟล์จะถูกเพิ่มที่นี่โดย JavaScript -->
+                </div>
+                <div>
+                    <label for="filename">ชื่อไฟล์:</label>
+                    <input type="text" id="filename" placeholder="ชื่อไฟล์ (ไม่ต้องมีนามสกุล)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ข้อมูลเริ่มต้น
+        let transactions = [];
+        let currentFile = 'บันทึกการเงิน';
+
+        // ฟังก์ชันโหลดข้อมูลจาก localStorage
+        function loadData() {
+            const savedData = localStorage.getItem('financeData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                transactions = data.transactions || [];
+                currentFile = data.currentFile || 'บันทึกการเงิน';
+                document.getElementById('filename').value = currentFile;
+            }
+            updateUI();
+        }
+
+        // ฟังก์ชันบันทึกข้อมูลลง localStorage
+        function saveData() {
+            const data = {
+                transactions,
+                currentFile
+            };
+            localStorage.setItem('financeData', JSON.stringify(data));
+        }
+
+        // ฟังก์ชันอัพเดต UI
+        function updateUI() {
+            // คำนวณยอดรวม
+            const totalIncome = transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+                
+            const totalExpense = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+                
+            const balance = totalIncome - totalExpense;
+
+            // อัพเดตสรุปยอด
+            document.getElementById('total-income').textContent = totalIncome.toFixed(2) + ' บาท';
+            document.getElementById('total-expense').textContent = totalExpense.toFixed(2) + ' บาท';
+            document.getElementById('balance').textContent = balance.toFixed(2) + ' บาท';
+
+            // อัพเดตรายการล่าสุด
+            const transactionList = document.getElementById('transaction-list');
+            transactionList.innerHTML = '';
+
+            if (transactions.length === 0) {
+                transactionList.innerHTML = '<p>ไม่มีรายการ</p>';
+            } else {
+                // เรียงลำดับรายการจากล่าสุดไปเก่าสุด
+                const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                sortedTransactions.forEach(transaction => {
+                    const item = document.createElement('div');
+                    item.className = 'transaction-item';
+                    
+                    const amountClass = transaction.type === 'income' ? 'income-text' : 'expense-text';
+                    const amountPrefix = transaction.type === 'income' ? '+' : '-';
+                    
+                    item.innerHTML = `
+                        <div>
+                            <strong>${transaction.description}</strong>
+                            <br>
+                            <small>${transaction.category} • ${formatDate(transaction.date)}</small>
+                        </div>
+                        <div class="${amountClass}">
+                            <strong>${amountPrefix}${transaction.amount.toFixed(2)} บาท</strong>
+                        </div>
+                    `;
+                    
+                    transactionList.appendChild(item);
+                });
+            }
+
+            // อัพเดตรายการไฟล์
+            updateFileList();
+        }
+
+        // ฟังก์ชันจัดรูปแบบวันที่
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH');
+        }
+
+        // ฟังก์ชันเพิ่มรายการใหม่
+        function addTransaction(type, amount, description, category, date) {
+            const transaction = {
+                id: Date.now(),
+                type,
+                amount: parseFloat(amount),
+                description,
+                category,
+                date
+            };
+            
+            transactions.push(transaction);
+            saveData();
+            updateUI();
+        }
+
+        // ฟังก์ชันสร้างไฟล์ใหม่
+        function newFile() {
+            const filename = document.getElementById('filename').value.trim() || 'บันทึกการเงิน';
+            if (confirm(`ต้องการสร้างไฟล์ใหม่ "${filename}" หรือไม่? ข้อมูลปัจจุบันจะถูกลบ`)) {
+                transactions = [];
+                currentFile = filename;
+                saveData();
+                updateUI();
+            }
+        }
+
+        // ฟังก์ชันบันทึกไฟล์
+        function saveToFile() {
+            const filename = document.getElementById('filename').value.trim() || 'บันทึกการเงิน';
+            currentFile = filename;
+            saveData();
+            
+            // สร้างข้อมูลสำหรับดาวน์โหลด
+            const dataStr = JSON.stringify({
+                filename: currentFile,
+                transactions,
+                exportDate: new Date().toISOString()
+            }, null, 2);
+            
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${currentFile}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            alert(`บันทึกไฟล์ "${currentFile}.json" เรียบร้อยแล้ว`);
+        }
+
+        // ฟังก์ชันโหลดไฟล์
+        function loadFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    transactions = data.transactions || [];
+                    currentFile = data.filename || file.name.replace('.json', '');
+                    document.getElementById('filename').value = currentFile;
+                    saveData();
+                    updateUI();
+                    alert(`โหลดไฟล์ "${currentFile}" เรียบร้อยแล้ว`);
+                } catch (error) {
+                    alert('เกิดข้อผิดพลาดในการโหลดไฟล์: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ฟังก์ชันอัพเดตรายการไฟล์
+        function updateFileList() {
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = '';
+            
+            // ในตัวอย่างนี้ เราจะแสดงเฉพาะไฟล์ปัจจุบัน
+            // ในเวอร์ชันจริง คุณอาจต้องการสแกนโฟลเดอร์ Saves
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.textContent = `${currentFile}.json`;
+            fileList.appendChild(fileItem);
+        }
+
+        // ตั้งค่า event listeners เมื่อโหลดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', function() {
+            // โหลดข้อมูล
+            loadData();
+            
+            // ตั้งค่าวันที่เป็นวันนี้
+            document.getElementById('date').valueAsDate = new Date();
+            
+            // จัดการฟอร์ม
+            document.getElementById('transaction-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const type = document.getElementById('type').value;
+                const amount = document.getElementById('amount').value;
+                const description = document.getElementById('description').value;
+                const category = document.getElementById('category').value;
+                const date = document.getElementById('date').value;
+                
+                addTransaction(type, amount, description, category, date);
+                
+                // รีเซ็ตฟอร์ม
+                this.reset();
+                document.getElementById('date').valueAsDate = new Date();
+            });
+            
+            // ปุ่มล้างฟอร์ม
+            document.getElementById('clear-form').addEventListener('click', function() {
+                document.getElementById('transaction-form').reset();
+                document.getElementById('date').valueAsDate = new Date();
+            });
+            
+            // จัดการไฟล์
+            document.getElementById('new-file').addEventListener('click', newFile);
+            
+            document.getElementById('save-file').addEventListener('click', saveToFile);
+            
+            document.getElementById('load-file').addEventListener('click', function() {
+                document.getElementById('file-input').click();
+            });
+            
+            // สร้าง input file ที่ซ่อนไว้
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json';
+            fileInput.id = 'file-input';
+            fileInput.className = 'hidden';
+            fileInput.addEventListener('change', loadFromFile);
+            document.body.appendChild(fileInput);
+            
+            // บันทึกอัตโนมัติทุก 30 วินาที
+            setInterval(saveData, 30000);
+        });
+    </script>
+</body>
+</html>
